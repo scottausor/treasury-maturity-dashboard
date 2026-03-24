@@ -1,0 +1,137 @@
+# Treasury MSPD Scraper
+
+## Overview
+Automated workflow that downloads the latest Treasury Department Monthly Statement of Public Debt (MSPD), parses all maturity dates for bills, notes, and bonds, and exports aggregated data to JSON for use in analytics dashboards.
+
+## What It Does
+1. **Downloads** the latest MSPD PDF from `treasurydirect.gov`
+2. **Extracts** all Treasury Bill, Note, and Bond maturity dates from the PDF
+3. **Aggregates** maturities by month and year
+4. **Exports** clean JSON with summary stats and detailed breakdowns
+5. **Cleans up** temporary files
+
+## Output Data
+**Canonical file:** `treasury_maturity_latest.json`
+
+Contains:
+- **Summary totals** (total marketable, bills, notes, bonds)
+- **Monthly breakdown** (all instruments) for next 12 months
+- **Yearly breakdown** for next 30 years
+- **Snapshot date** of when data was extracted
+
+Example structure:
+```json
+{
+  "date": "2026-02-28",
+  "summary": {
+    "total_marketable": 30616419,
+    "bills_total": 6808106,
+    "notes_total": 15767155,
+    "bonds_total": 5298564,
+    "snapshot_date": "February 28, 2026"
+  },
+  "monthly": [
+    {"month": "Mar 26", "bills": 347, "notes": 241, "bonds": 12, "total": 600},
+    ...
+  ],
+  "yearly": [
+    {"year": "2026", "maturity": 7206},
+    ...
+  ]
+}
+```
+
+## File Locations
+```
+C:\Users\scott\OneDrive\Documents\Research\My Workflow\
+├── treasury_scraper.py          (main script - RUN THIS)
+├── treasury_maturity_latest.json (output - canonical file)
+└── mspd_latest.pdf              (temp - auto-cleaned up)
+```
+
+## How To Run
+
+### Manual Execution
+```bash
+cd C:\Users\scott\OneDrive\Documents\Research\My Workflow
+python treasury_scraper.py
+```
+
+### Expected Output
+- Console logs showing each parsing step
+- Success/error messages
+- Summary stats (totals, monthly avg, yearly breakdown)
+- Exit code 0 on success, 1 on failure
+
+### Execution Time
+~30-45 seconds (varies based on PDF size and network)
+
+## Dependencies
+Required Python packages (install once):
+```bash
+pip install requests PyPDF2
+```
+
+Verify installation:
+```bash
+python -c "import requests, PyPDF2; print('OK')"
+```
+
+## Schedule
+**Trigger:** 5th of each month at 2 PM UTC
+**Cron expression:** `0 14 5 * *`
+
+### Openclaw Reminder
+Set a monthly reminder/cron with:
+- **Text:** "Use treasury-mspd-scraper skill. Follow `.../Skills/treasury-mspd-scraper/SKILL.md`. Then run: `python C:\Users\scott\OneDrive\Documents\Research\My Workflow\treasury_scraper.py`"
+- **Schedule:** Monthly on the 5th at 2 PM UTC
+
+## Environment Variables
+None required. The script uses relative paths and detects file locations automatically.
+
+## Error Handling
+- **PDF not found:** Script fails gracefully and reports URL not found
+- **Parsing errors:** Partial data is still saved; check logs for which instruments failed
+- **Network timeout:** Retries once after 10 second wait
+- **Temp file cleanup:** Always runs, even on failure
+
+## Troubleshooting
+
+### "Could not fetch MSPD PDF"
+- Treasury's website may have changed URL
+- Check `https://treasurydirect.gov/NP/debt/current` manually
+- Look for latest MSPD PDF link and update script if needed
+
+### "No data extracted"
+- PDF structure may differ from expected format
+- Check PDF opens manually in a reader
+- Review console logs for which section parsing failed
+
+### "JSON not created"
+- Check folder permissions: `C:\Users\scott\OneDrive\Documents\Research\My Workflow\`
+- Ensure write access to the directory
+- Check disk space available
+
+### Verify Success
+After running, check:
+1. File exists: `treasury_maturity_latest.json`
+2. File size > 1KB (should be ~2-3KB)
+3. Contains JSON with `"monthly"` and `"yearly"` keys
+4. Exit code = 0
+
+## Updating the Dashboard
+The React dashboard reads from this JSON file:
+- If hosting on GitHub: update the raw GitHub URL in dashboard
+- If local: point dashboard to `treasury_maturity_latest.json` directly
+- Refresh dashboard after run to see latest data
+
+## Notes
+- Treasury releases MSPD on ~4th business day of month
+- Script runs on 5th to ensure latest PDF is available
+- Large PDFs (>100 pages) may take 1 minute to parse
+- Maturity dates are as of statement date, not current date
+
+## Skill Version
+v1.0 - Initial release (Feb 2026)
+
+Last updated: February 28, 2026

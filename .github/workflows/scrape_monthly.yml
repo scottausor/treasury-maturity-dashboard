@@ -1,0 +1,60 @@
+name: Monthly Treasury Scrape
+
+on:
+  # Runs on the 6th of every month at 08:00 UTC
+  # (MSPD is typically published on the 5th)
+  schedule:
+    - cron: "0 8 6 * *"
+
+  # Also allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "MSPD year (leave blank for auto)"
+        required: false
+        default: ""
+      month:
+        description: "MSPD month (leave blank for auto)"
+        required: false
+        default: ""
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests pdfplumber pandas python-dateutil
+
+      - name: Run scraper
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.year }}" ]; then
+            ARGS="$ARGS --year ${{ github.event.inputs.year }}"
+          fi
+          if [ -n "${{ github.event.inputs.month }}" ]; then
+            ARGS="$ARGS --month ${{ github.event.inputs.month }}"
+          fi
+          python treasury_scraper.py --out data $ARGS
+
+      - name: Check if data changed
+        id: check_changes
+        run: |
+          git diff --quiet data/ && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push updated data
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "data: update Treasury maturity data $(date +'%Y-%m')"
+          git push

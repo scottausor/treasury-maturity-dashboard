@@ -1,0 +1,118 @@
+{
+  "monthly": [
+    {
+      "maturity_ym": "2026-04",
+      "bill": 710000.0,
+      "bond": 0.0,
+      "frn": 40000.0,
+      "note": 520000.0,
+      "tips": 22000.0,
+      "total_millions": 1292000.0
+    },
+    {
+      "maturity_ym": "2026-05",
+      "bill": 690000.0,
+      "bond": 32000.0,
+      "frn": 38000.0,
+      "note": 380000.0,
+      "tips": 15000.0,
+      "total_millions": 1155000.0
+    },
+    {
+      "maturity_ym": "2026-06",
+      "bill": 720000.0,
+      "bond": 0.0,
+      "frn": 42000.0,
+      "note": 610000.0,
+      "tips": 25000.0,
+      "total_millions": 1397000.0
+    },
+    {
+      "maturity_ym": "2026-07",
+      "bill": 695000.0,
+      "bond": 24000.0,
+      "frn": 36000.0,
+      "note": 490000.0,
+      "tips": 20000.0,
+      "total_millions": 1265000.0
+    },
+    {
+      "maturity_ym": "2026-08",
+      "bill": 705000.0,
+      "bond": 0.0,
+      "frn": 39000.0,
+      "note": 420000.0,
+      "tips": 12000.0,
+      "total_millions": 1176000.0
+    },
+    {
+      "maturity_ym": "2026-09",
+      "bill": 730000.0,
+      "bond": 30000.0,
+      "frn": 44000.0,
+      "note": 570000.0,
+      "tips": 28000.0,
+      "total_millions": 1402000.0
+    },
+    {
+      "maturity_ym": "2026-10",
+      "bill": 680000.0,
+      "bond": 0.0,
+      "frn": 37000.0,
+      "note": 440000.0,
+      "tips": 16000.0,
+      "total_millions": 1173000.0
+    },
+    {
+      "maturity_ym": "2026-11",
+      "bill": 715000.0,
+      "bond": 26000.0,
+      "frn": 41000.0,
+      "note": 510000.0,
+      "tips": 21000.0,
+      "total_millions": 1313000.0
+    },
+    {
+      "maturity_ym": "2026-12",
+      "bill": 760000.0,
+      "bond": 35000.0,
+      "frn": 48000.0,
+      "note": 680000.0,
+      "tips": 30000.0,
+      "total_millions": 1553000.0
+    },
+    {
+      "maturity_ym": "2027-01",
+      "bill": 670000.0,
+      "bond": 0.0,
+      "frn": 34000.0,
+      "note": 400000.0,
+      "tips": 14000.0,
+      "total_millions": 1118000.0
+    },
+    {
+      "maturity_ym": "2027-02",
+      "bill": 660000.0,
+      "bond": 22000.0,
+      "frn": 33000.0,
+      "note": 390000.0,
+      "tips": 18000.0,
+      "total_millions": 1123000.0
+    }
+  ],
+  "summary": {
+    "total_next_12m_billions": 13967.0,
+    "peak_month": "2026-12",
+    "peak_month_billions": 1553.0,
+    "avg_monthly_billions": 1269.7,
+    "types_found": [
+      "bill",
+      "bond",
+      "frn",
+      "note",
+      "tips"
+    ],
+    "extracted_at": "2026-03-24T11:54:24.226377Z"
+  },
+  "raw_count": 55
+}
