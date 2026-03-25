@@ -141,7 +141,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Filters ───────────────────────────────────────────────────────────────────
 df = pd.DataFrame(monthly)
-df["maturity_ym"] = pd.to_datetime(df["maturity_ym"])
+df["maturity_ym"] = pd.to_datetime(df["ym"] if "ym" in df.columns else df["maturity_ym"])
 
 types_available = [t for t in TYPE_ORDER if t in df.columns and df[t].sum() > 0]
 

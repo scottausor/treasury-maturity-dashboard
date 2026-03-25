@@ -1,0 +1,17 @@
+# Source MSPD files (too large for git, keep locally)
+data/*.xls
+data/*.xlsx
+xls_cache/
+pdf_cache/
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# OS
+.DS_Store
+Thumbs.db
