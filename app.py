@@ -49,8 +49,17 @@ st.markdown("""
 
 # ── Data loading ──────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600)
-def load_data() -> dict | None:
-    path = Path(__file__).parent / "data" / "maturity_data_latest.json"
+def discover_datasets() -> list[str]:
+    """Return available YYYYMM labels, newest first."""
+    data_dir = Path(__file__).parent / "data"
+    files = sorted(data_dir.glob("maturity_data_2*.json"), reverse=True)
+    return [f.stem.replace("maturity_data_", "") for f in files
+            if f.stem != "maturity_data_latest"]
+
+
+@st.cache_data(ttl=3600)
+def load_data(label: str = "latest") -> dict | None:
+    path = Path(__file__).parent / "data" / f"maturity_data_{label}.json"
     if path.exists():
         return json.loads(path.read_text())
     return None
@@ -77,15 +86,26 @@ TYPE_ORDER = ["bill", "note", "bond", "tips", "frn", "other"]
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
-data = load_data()
-
 st.markdown("## 🏛️ US Treasury — Debt Maturity Schedule")
 
+datasets = discover_datasets()
+if not datasets:
+    st.error("No data found. Run `treasury_scraper.py` first.")
+    st.stop()
+
+# Dataset selector
+primary_label = st.selectbox(
+    "📂 Dataset",
+    options=datasets,
+    index=0,
+    format_func=lambda x: f"MSPD {x[:4]}-{x[4:]}",
+)
+
+data = load_data(primary_label)
+data_compare = None
+
 if data is None:
-    st.error(
-        "No data found. Run `treasury_scraper.py` first to generate "
-        "`data/maturity_data_latest.json`."
-    )
+    st.error(f"Could not load data for {primary_label}.")
     st.stop()
 
 summary = data["summary"]
