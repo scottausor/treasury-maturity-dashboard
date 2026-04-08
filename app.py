@@ -145,16 +145,20 @@ df["maturity_ym"] = pd.to_datetime(df["ym"] if "ym" in df.columns else df["matur
 
 types_available = [t for t in TYPE_ORDER if t in df.columns and df[t].sum() > 0]
 
-with st.expander("⚙️ Filters", expanded=False):
-    fcol1, fcol2 = st.columns([2, 1])
-    with fcol1:
-        selected_types = st.multiselect(
-            "Security types", types_available,
-            default=types_available,
-            format_func=str.upper,
-        )
-    with fcol2:
-        months_ahead = st.slider("Months to show", 6, 36, 18)
+fcol1, fcol2 = st.columns([3, 1])
+with fcol1:
+    selected_types = st.multiselect(
+        "Security types", types_available,
+        default=types_available,
+        format_func=str.upper,
+    )
+with fcol2:
+    months_ahead = st.selectbox(
+        "Months to show",
+        options=[6, 12, 18, 24, 36, 60, 120, 999],
+        index=2,  # default = 18
+        format_func=lambda x: "All" if x == 999 else f"{x} months",
+    )
 
 df_filtered = df[df["maturity_ym"] <= df["maturity_ym"].min() + pd.DateOffset(months=months_ahead)]
 
