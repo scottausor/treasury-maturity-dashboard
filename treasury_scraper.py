@@ -126,28 +126,56 @@ def find_or_download_xls(year: int = None, month: int = None) -> tuple[Path, str
 
 # ── Extraction ────────────────────────────────────────────────────────────────
 
+# Section markers in col B — used to dynamically detect row boundaries
+SECTION_MARKERS = {
+    "bill":  ("Treasury Bills",                    "Total Treasury Bills"),
+    "note":  ("Treasury Notes",                    "Total Treasury Notes"),
+    "bond":  ("Treasury Bonds",                    "Total Treasury Bonds"),
+    "tips":  ("Treasury Inflation-Protected",      "Total Treasury TIPS"),
+    "frn":   ("Treasury Floating Rate Notes",      "Total Treasury Floating Rate Notes"),
+}
+
+
+def detect_sections(raw: pd.DataFrame) -> dict[str, tuple[int, int]]:
+    """
+    Dynamically find (start_row, end_row) for each security type by scanning
+    col B for known header and total markers. Works across all MSPD vintages.
+    """
+    col_b = raw[1].astype(str)
+    sections = {}
+    for sec_type, (header, total) in SECTION_MARKERS.items():
+        start_rows = [i for i, v in enumerate(col_b) if header.lower() in v.lower()]
+        end_rows   = [i for i, v in enumerate(col_b) if total.lower() in v.lower()]
+        if start_rows and end_rows:
+            start = start_rows[0] + 2   # skip header + CUSIP label row
+            end   = end_rows[0]
+            sections[sec_type] = (start, end)
+        else:
+            log.warning(f"  Could not find section markers for {sec_type} — skipping")
+    return sections
+
+
 def extract_from_excel(xls_path: Path) -> pd.DataFrame:
     """
     Read the 'Marketable' sheet and extract one row per security.
-    Returns a DataFrame with columns:
-        type, maturity_date, amount_millions
+    Dynamically detects section boundaries so it works across all MSPD vintages.
+    Returns a DataFrame with columns: type, maturity_date, amount_millions
     """
-    log.info(f"Reading: {xls_path}")
+    log.info(f"Reading: {xls_path.name}")
     raw = pd.read_excel(xls_path, sheet_name="Marketable",
                         header=None, engine="xlrd")
-    log.info(f"Sheet dimensions: {raw.shape[0]} rows × {raw.shape[1]} cols")
 
+    sections = detect_sections(raw)
     records = []
-    for sec_type, (start, end) in SECTIONS.items():
+
+    for sec_type, (start, end) in sections.items():
         section_count = 0
         for i in range(start, end):
             raw_date = raw.iat[i, 7]   # Col H — maturity date
             raw_amt  = raw.iat[i, 15]  # Col P — amount outstanding ($M)
 
-            # Skip empty cells
             if pd.isna(raw_date) or pd.isna(raw_amt):
                 continue
-            # Skip non-date values like "Various" or dotted lines
             if not hasattr(raw_date, "year"):
                 continue
             try:
@@ -164,10 +192,10 @@ def extract_from_excel(xls_path: Path) -> pd.DataFrame:
             })
             section_count += 1
 
-        log.info(f"  {sec_type.upper():5s}: {section_count} securities extracted")
+        log.info(f"  {sec_type.upper():5s}: {section_count} securities")
 
     df = pd.DataFrame(records)
-    log.info(f"Total extracted: {len(df)} securities, "
+    log.info(f"  Total: {len(df)} securities, "
              f"${df['amount_millions'].sum() / 1e6:.2f}T outstanding")
     return df
 
@@ -177,13 +205,21 @@ def extract_from_excel(xls_path: Path) -> pd.DataFrame:
 def validate(df: pd.DataFrame, xls_path: Path) -> pd.DataFrame:
     """
     Cross-check extracted totals against the official subtotals in the sheet.
+    Dynamically locates each section's total row via col B text markers so
+    it works across all MSPD vintages regardless of row count.
     Warns if any section is off by more than 0.01%.
     """
     raw = pd.read_excel(xls_path, sheet_name="Marketable",
                         header=None, engine="xlrd")
+    col_b = raw[1].astype(str)
 
     log.info("Validating against sheet subtotals…")
-    for sec_type, total_row in TOTAL_ROWS.items():
+    for sec_type, (_header, total_label) in SECTION_MARKERS.items():
+        total_rows = [i for i, v in enumerate(col_b) if total_label.lower() in v.lower()]
+        if not total_rows:
+            log.warning(f"  {sec_type.upper()}: could not find total row — skipping validation")
+            continue
+        total_row = total_rows[0]
         official = raw.iat[total_row, 15]
         extracted = df[df["type"] == sec_type]["amount_millions"].sum()
         if pd.isna(official):
@@ -197,8 +233,7 @@ def validate(df: pd.DataFrame, xls_path: Path) -> pd.DataFrame:
         log.info(f"  {sec_type.upper():5s}: extracted ${extracted:,.0f}M "
                  f"vs official ${official:,.0f}M  ({diff_pct:.4f}%)  {status}")
         if diff_pct >= 0.01:
-            log.warning(f"  {sec_type} total differs from sheet by {diff_pct:.4f}% "
-                        f"— check SECTIONS row boundaries in scraper config.")
+            log.warning(f"  {sec_type} total differs from sheet by {diff_pct:.4f}%.")
     return df
 
 
